@@ -64,30 +64,37 @@ def eliminar():
             mensaje_label.config(text="Seleccione un registro para eliminar", fg="red")
 
 def agregar():
-    limpiar()
     respuesta = messagebox.askquestion("Agregar", message="¿Estás seguro de agregar el nuevo registro?")
     if respuesta == "yes":
         if validar():
-            # Crear un diccionario con los datos del nuevo alumno
-            nuevo_alumno = {
-                "dni": dni.get(),
-                "legajo": legajo.get(),
-                "nombre": nombre.get(),
-                "apellido": apellido.get()
-            }
-            
+            encontrado = False
             # Cargar los datos existentes desde el archivo JSON
             with open('datos_alumnos.json', 'r') as archivo:
                 datos_alumnos = json.load(archivo)
             
-            # Agregar el nuevo alumno a la lista
-            datos_alumnos.append(nuevo_alumno)
-            
-            # Guardar los datos actualizad|os en el archivo JSON
-            with open('datos_alumnos.json', 'w') as archivo:
-                json.dump(datos_alumnos, archivo)
+            # Verificar que el DNI y el numero de legajo no estén repetidos
+            for alumno in datos_alumnos:
+                if dni.get() in alumno.values() or legajo.get() in alumno.values():
+                    mensaje_label.config(text="DNI y legajo deben ser únicos", fg="red")
+                    encontrado = True
+                    break
+            if not encontrado:
+                # Crear un diccionario con los datos del nuevo alumno
+                nuevo_alumno = {
+                    "dni": dni.get(),
+                    "legajo": legajo.get(),
+                    "nombre": nombre.get(),
+                    "apellido": apellido.get()
+                }
                 
-            mensaje_label.config(text="Registro añadido correctamente", fg="green")
+                # Agregar el nuevo alumno a la lista
+                datos_alumnos.append(nuevo_alumno)
+                
+                # Guardar los datos actualizados en el archivo JSON
+                with open('datos_alumnos.json', 'w') as archivo:
+                    json.dump(datos_alumnos, archivo)
+                    
+                mensaje_label.config(text="Registro añadido correctamente", fg="green")         
             cargar_datos()
             limpiar()
         else:
