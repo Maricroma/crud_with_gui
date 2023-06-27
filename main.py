@@ -94,9 +94,9 @@ def agregar():
                 with open('datos_alumnos.json', 'w') as archivo:
                     json.dump(datos_alumnos, archivo)
                     
-                mensaje_label.config(text="Registro añadido correctamente", fg="green")         
+                mensaje_label.config(text="Registro añadido correctamente", fg="green")
+                limpiar()         
             cargar_datos()
-            limpiar()
         else:
             mensaje_label.config(text="Los campos no deben estar vacíos", fg="red")   
 
@@ -104,24 +104,32 @@ def actualizar():
     respuesta = messagebox.askquestion("Actualizar", message="¿Estás seguro de actualizar el registro seleccionado?")
     if respuesta == "yes":
         if validar():  
+            encontrado = False
             # Cargar los datos existentes desde el archivo JSON
             with open('datos_alumnos.json', 'r') as archivo:
                 datos_alumnos = json.load(archivo)
-            
-            for alumno in datos_alumnos:
-                if alumno["dni"] == dni.get():
-                    alumno["legajo"] = legajo.get()
-                    alumno["nombre"] = nombre.get()
-                    alumno["apellido"] = apellido.get()
-                else:
-                    mensaje_label.config(text="El DNI no existe", fg="red")
-            # Guardar los datos actualizados en el archivo JSON
-            with open('datos_alumnos.json', 'w') as archivo:
-                json.dump(datos_alumnos, archivo)
                 
-            mensaje_label.config(text="Registro actualizado correctamente", fg="green")
+            # Verificar que el numero de legajo no esté repetidos
+            for alumno in datos_alumnos:
+                if legajo.get() in alumno.values():
+                    mensaje_label.config(text="El legajo debe ser único", fg="red")
+                    encontrado = True
+                    break
+            
+            if not encontrado:
+                for alumno in datos_alumnos:
+                    if alumno["dni"] == dni.get():
+                        alumno["legajo"] = legajo.get()
+                        alumno["nombre"] = nombre.get()
+                        alumno["apellido"] = apellido.get()
+                    else:
+                        mensaje_label.config(text="El DNI no existe", fg="red")
+                # Guardar los datos actualizados en el archivo JSON
+                with open('datos_alumnos.json', 'w') as archivo:
+                    json.dump(datos_alumnos, archivo)
+                mensaje_label.config(text="Registro actualizado correctamente", fg="green")
+                limpiar()
             cargar_datos()
-            limpiar()
         else:
             mensaje_label.config(text="Los campos no deben estar vacíos", fg="red")
 
