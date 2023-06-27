@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import json
 
 # funciones  
@@ -11,6 +11,8 @@ def limpiar():
     legajo.set("")
     nombre.set("")
     apellido.set("")
+    dni_entry.config(state="normal")
+    
     
 def seleccionar(event):
     seleccion = tabla_estud.selection()
@@ -42,22 +44,29 @@ def cargar_datos():
             tabla_estud.insert("", END, dni, text=dni, values=values)
     
 def eliminar():
-    try:
-        dni = tabla_estud.selection()[0]
-        datos_actualizados = []
-        with open('datos_alumnos.json', 'r') as archivo:
-            datos_alumnos = json.load(archivo)
-            for item in datos_alumnos:
-                if item["dni"] != dni:
-                    datos_actualizados.append(item)  
-        with open('datos_alumnos.json', 'w') as archivo:
-            json.dump(datos_actualizados, archivo)
-        tabla_estud.delete(dni)
-        mensaje_label.config(text="Se ha eliminado el registro correctamente", fg="green")
-    except IndexError:
-        mensaje_label.config(text="Seleccione un registro para eliminar", fg="red")
+    respuesta = messagebox.askquestion("Eliminar", message="¿Estás seguro de eliminar el registro seleccionado?")
+    if respuesta == "yes":
+        try:
+            dni = tabla_estud.selection()[0]
+            datos_actualizados = []
+            with open('datos_alumnos.json', 'r') as archivo:
+                datos_alumnos = json.load(archivo)
+                for item in datos_alumnos:
+                    if item["dni"] != dni:
+                        datos_actualizados.append(item)  
+            with open('datos_alumnos.json', 'w') as archivo:
+                json.dump(datos_actualizados, archivo)
+            tabla_estud.delete(dni)
+            mensaje_label.config(text="Se ha eliminado el registro correctamente", fg="green")
+            cargar_datos()
+            limpiar()
+        except IndexError:
+            mensaje_label.config(text="Seleccione un registro para eliminar", fg="red")
 
 def agregar():
+    limpiar()
+    respuesta = messagebox.askquestion("Agregar", message="¿Estás seguro de agregar el nuevo registro?")
+    if respuesta == "yes":
         if validar():
             # Crear un diccionario con los datos del nuevo alumno
             nuevo_alumno = {
@@ -82,31 +91,32 @@ def agregar():
             cargar_datos()
             limpiar()
         else:
-            mensaje_label.config(text="Los campos no deben estar vacíos", fg="red")
+            mensaje_label.config(text="Los campos no deben estar vacíos", fg="red")   
 
 def actualizar():
-    if validar():  
-        # Cargar los datos existentes desde el archivo JSON
-        with open('datos_alumnos.json', 'r') as archivo:
-            datos_alumnos = json.load(archivo)
-        
-        for alumno in datos_alumnos:
-            if alumno["dni"] == dni.get():
-                alumno["legajo"] = legajo.get()
-                alumno["nombre"] = nombre.get()
-                alumno["apellido"] = apellido.get()
-                print(alumno)
-            else:
-                mensaje_label.config(text="El DNI no existe", fg="red")
-        # Guardar los datos actualizados en el archivo JSON
-        with open('datos_alumnos.json', 'w') as archivo:
-            json.dump(datos_alumnos, archivo)
+    respuesta = messagebox.askquestion("Actualizar", message="¿Estás seguro de actualizar el registro seleccionado?")
+    if respuesta == "yes":
+        if validar():  
+            # Cargar los datos existentes desde el archivo JSON
+            with open('datos_alumnos.json', 'r') as archivo:
+                datos_alumnos = json.load(archivo)
             
-        mensaje_label.config(text="Registro actualizado correctamente", fg="green")
-        cargar_datos()
-        limpiar()
-    else:
-        mensaje_label.config(text="Los campos no deben estar vacíos", fg="red")
+            for alumno in datos_alumnos:
+                if alumno["dni"] == dni.get():
+                    alumno["legajo"] = legajo.get()
+                    alumno["nombre"] = nombre.get()
+                    alumno["apellido"] = apellido.get()
+                else:
+                    mensaje_label.config(text="El DNI no existe", fg="red")
+            # Guardar los datos actualizados en el archivo JSON
+            with open('datos_alumnos.json', 'w') as archivo:
+                json.dump(datos_alumnos, archivo)
+                
+            mensaje_label.config(text="Registro actualizado correctamente", fg="green")
+            cargar_datos()
+            limpiar()
+        else:
+            mensaje_label.config(text="Los campos no deben estar vacíos", fg="red")
 
 ventana = Tk()
 ventana.title("Plataforma de CRUD")
@@ -138,6 +148,9 @@ nombre_entry.grid(column=3, row=0)
 apellido_label = Label(marco, text="Apellido", font="Courier 10").grid(column=2, row=1, padx=10, pady=5)
 apellido_entry = Entry(marco, textvariable=apellido)
 apellido_entry.grid(column=3, row=1)
+
+limpiar_btn = Button(marco, text="Limpiar", bd=3, command=lambda:limpiar())
+limpiar_btn.grid(column=4, row=1, padx=10)
 
 mensaje_label = Label(marco, text="", fg="green")
 mensaje_label.grid(column=0, row=2, columnspan=4, pady=5)
