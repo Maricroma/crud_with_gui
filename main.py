@@ -1,198 +1,70 @@
-from tkinter import *
-from tkinter import ttk, messagebox
-import json
+import tkinter as tk
+from tkinter import ttk #submódulo de tkinter
+from funciones_crud import cargar_datos, eliminar_registro
+from funciones_interfaz import abrir_ventana_agregar, abrir_ventana_actualizar, seleccionar, verificar_click_fuera
 
-# funciones  
-def validar():
-    return len(dni.get()) > 0 and len(legajo.get()) > 0 and len(nombre.get()) > 0 and len(apellido.get()) > 0
-    
-def limpiar():
-    dni.set("")
-    legajo.set("")
-    nombre.set("")
-    apellido.set("")
-    dni_entry.config(state="normal")
-    
-    
-def seleccionar(event):
-    seleccion = tabla_estud.selection()
-    if seleccion:
-        dni_as_id = seleccion[0]
-        values = tabla_estud.item(dni_as_id, "values")
-        if values:
-            dni.set(values[0])
-            legajo.set(values[1])
-            nombre.set(values[2])
-            apellido.set(values[3])
-            dni_entry.config(state="readonly")
-    
-def vaciar_datos():
-    #se deben recorrer las filas del treeview y borrar los datos
-    filas = tabla_estud.get_children()
-    for fila in filas:
-        tabla_estud.delete(fila)
-
-def cargar_datos():
-    vaciar_datos()
-    with open('datos_alumnos.json', 'r') as archivo:
-        datos_alumnos = json.load(archivo)
-        for item in datos_alumnos:
-            dni = item["dni"]
-            values = []
-            for v in item.values():
-                values.append(v)
-            tabla_estud.insert("", END, dni, text=dni, values=values)
-    
-def eliminar():
-    respuesta = messagebox.askquestion("Eliminar", message="¿Estás seguro de eliminar el registro seleccionado?")
-    if respuesta == "yes":
-        try:
-            dni = tabla_estud.selection()[0]
-            datos_actualizados = []
-            with open('datos_alumnos.json', 'r') as archivo:
-                datos_alumnos = json.load(archivo)
-                for item in datos_alumnos:
-                    if item["dni"] != dni:
-                        datos_actualizados.append(item)  
-            with open('datos_alumnos.json', 'w') as archivo:
-                json.dump(datos_actualizados, archivo)
-            tabla_estud.delete(dni)
-            mensaje_label.config(text="Se ha eliminado el registro correctamente", fg="green")
-            cargar_datos()
-            limpiar()
-        except IndexError:
-            mensaje_label.config(text="Seleccione un registro para eliminar", fg="red")
-
-def agregar():
-    respuesta = messagebox.askquestion("Agregar", message="¿Estás seguro de agregar el nuevo registro?")
-    if respuesta == "yes":
-        if validar():
-            encontrado = False
-            # Cargar los datos existentes desde el archivo JSON
-            with open('datos_alumnos.json', 'r') as archivo:
-                datos_alumnos = json.load(archivo)
-            
-            # Verificar que el DNI y el numero de legajo no estén repetidos
-            for alumno in datos_alumnos:
-                if dni.get() in alumno.values() or legajo.get() in alumno.values():
-                    mensaje_label.config(text="DNI y legajo deben ser únicos", fg="red")
-                    encontrado = True
-                    break
-            if not encontrado:
-                # Crear un diccionario con los datos del nuevo alumno
-                nuevo_alumno = {
-                    "dni": dni.get(),
-                    "legajo": legajo.get(),
-                    "nombre": nombre.get(),
-                    "apellido": apellido.get()
-                }
-                
-                # Agregar el nuevo alumno a la lista
-                datos_alumnos.append(nuevo_alumno)
-                
-                # Guardar los datos actualizados en el archivo JSON
-                with open('datos_alumnos.json', 'w') as archivo:
-                    json.dump(datos_alumnos, archivo)
-                    
-                mensaje_label.config(text="Registro añadido correctamente", fg="green")
-                limpiar()         
-            cargar_datos()
-        else:
-            mensaje_label.config(text="Los campos no deben estar vacíos", fg="red")   
-
-def actualizar():
-    respuesta = messagebox.askquestion("Actualizar", message="¿Estás seguro de actualizar el registro seleccionado?")
-    if respuesta == "yes":
-        if validar():  
-            encontrado = False
-            # Cargar los datos existentes desde el archivo JSON
-            with open('datos_alumnos.json', 'r') as archivo:
-                datos_alumnos = json.load(archivo)
-                
-            # Verificar que el numero de legajo no esté repetidos
-            for alumno in datos_alumnos:
-                if legajo.get() in alumno.values():
-                    mensaje_label.config(text="El legajo debe ser único", fg="red")
-                    encontrado = True
-                    break
-            
-            if not encontrado:
-                for alumno in datos_alumnos:
-                    if alumno["dni"] == dni.get():
-                        alumno["legajo"] = legajo.get()
-                        alumno["nombre"] = nombre.get()
-                        alumno["apellido"] = apellido.get()
-                    else:
-                        mensaje_label.config(text="El DNI no existe", fg="red")
-                # Guardar los datos actualizados en el archivo JSON
-                with open('datos_alumnos.json', 'w') as archivo:
-                    json.dump(datos_alumnos, archivo)
-                mensaje_label.config(text="Registro actualizado correctamente", fg="green")
-                limpiar()
-            cargar_datos()
-        else:
-            mensaje_label.config(text="Los campos no deben estar vacíos", fg="red")
-
-ventana = Tk()
+ventana = tk.Tk()
 ventana.title("Plataforma de CRUD")
-ventana.geometry("600x500") #dimensiones anchoxalto
+# Se puede centrar directamente usando funciones para obtener el tamaño de la pantalla
+ancho_pantalla = ventana.winfo_screenwidth() # método para obtener el ancho
+alto_pantalla = ventana.winfo_screenheight() # método para obtener el alto
+ancho_ventana =  700
+alto_ventana = 500
+posicion_x = (ancho_pantalla - ancho_ventana) // 2 #division entera
+posicion_y = (alto_pantalla - alto_ventana) // 2
+ventana.geometry(f"{ancho_ventana}x{alto_ventana}+{posicion_x}+{posicion_y}")
+
+ventana.configure(bg='lightblue') # cambiar el color
+
 ventana.resizable(0, 0) #para que el usuario no pueda modificar el tamaño
 
-#vamos a crear un frame, dentro luego los label, botones, etc
-marco = LabelFrame(ventana, text="Formulario de Gestión de Estudiantes", font="Courier 10") # ledigo donde va a estar
-marco.place(x=50, y=50, width=500, height=400)
+marco = tk.LabelFrame(ventana, text="Formulario de Gestión de Empleados", font="Courier 12") # le digo donde va a estar
+marco.place(x=50, y=50, width=600, height=400)
+marco.configure(bg='azure2')
 
 #labels y entries
-dni = StringVar()
-legajo = StringVar()
-nombre = StringVar()
-apellido = StringVar()
+dni = tk.StringVar()
+legajo = tk.StringVar()
+apellido_nombre = tk.StringVar()
+domicilio = tk.StringVar()
 
-dni_label = Label(marco, text="DNI", font="Courier 10").grid(column=0, row=0, padx=5, pady=5)
-dni_entry = Entry(marco, textvariable=dni)
-dni_entry.grid(column=1, row=0)
+# tabla de lista de empleados
+tabla_emp = ttk.Treeview(marco, columns=("DNI", "LEGAJO", "NOMBRE", "DOMICILIO"), show="headings", style="Treeview")
+tabla_emp.grid(column=0, row=0, columnspan=7, padx=80, pady=30, sticky="nsew")
 
-legajo_label = Label(marco, text="Legajo", font="Courier 10").grid(column=0, row=1, padx=5, pady=5)
-legajo_entry = Entry(marco, textvariable=legajo)
-legajo_entry.grid(column=1, row=1)
+# Configurar columnas y encabezados del Treeview
+tabla_emp.column("DNI", width=70, anchor=tk.CENTER)
+tabla_emp.column("LEGAJO", width=50, anchor=tk.CENTER)
+tabla_emp.column("NOMBRE", width=150, anchor=tk.CENTER)
+tabla_emp.column("DOMICILIO", width=170, anchor=tk.CENTER)
 
-nombre_label = Label(marco, text="Nombre", font="Courier 10").grid(column=2, row=0, padx=10, pady=5)
-nombre_entry = Entry(marco, textvariable=nombre)
-nombre_entry.grid(column=3, row=0)
+tabla_emp.heading("DNI", text="DNI")
+tabla_emp.heading("LEGAJO", text="LEGAJO")
+tabla_emp.heading("NOMBRE", text="NOMBRE")
+tabla_emp.heading("DOMICILIO", text="DOMICILIO")
 
-apellido_label = Label(marco, text="Apellido", font="Courier 10").grid(column=2, row=1, padx=10, pady=5)
-apellido_entry = Entry(marco, textvariable=apellido)
-apellido_entry.grid(column=3, row=1)
+# Configurar estilos para el Treeview
+estilo_treeview = ttk.Style()
+estilo_treeview.theme_use("default")
+estilo_treeview.configure("Treeview", background="white", fieldbackground="white", foreground="black", rowheight=25, font=("Arial", 10))
+estilo_treeview.configure("Treeview.Heading", font=("Courier", 10, "bold"))
 
-limpiar_btn = Button(marco, text="Limpiar", bd=3, command=lambda:limpiar())
-limpiar_btn.grid(column=4, row=1, padx=10)
-
-mensaje_label = Label(marco, text="", fg="green")
-mensaje_label.grid(column=0, row=2, columnspan=4, pady=5)
-
-# tabla de lista de estudiantes
-tabla_estud = ttk.Treeview(marco)
-tabla_estud.grid(column=0, row=3, columnspan=4, pady=10)
-tabla_estud["columns"] = ("DNI", "LEGAJO", "NOMBRE", "APELLIDO") #que columnas va a tener
-tabla_estud.column("#0", width=0, stretch=NO)
-tabla_estud.column("DNI", width=60, anchor=CENTER) #centrado
-tabla_estud.column("LEGAJO", width=50, anchor=CENTER)
-tabla_estud.column("NOMBRE", width=100, anchor=CENTER)
-tabla_estud.column("APELLIDO", width=100, anchor=CENTER)
-tabla_estud.heading("#0", text="")
-tabla_estud.heading("DNI", text="DNI")
-tabla_estud.heading("LEGAJO", text="LEGAJO")
-tabla_estud.heading("NOMBRE", text="NOMBRE")
-tabla_estud.heading("APELLIDO", text="APELLIDO")
-tabla_estud.bind("<<TreeviewSelect>>", seleccionar)
+#Asocia el evento <<TreeviewSelect>> (que se desencadena cuando se selecciona un elemento en la tabla Treeview) con la función seleccionar.
+tabla_emp.bind("<<TreeviewSelect>>", lambda event: seleccionar(event, tabla_emp, dni, legajo, apellido_nombre, domicilio, eliminar_btn, modificar_btn))
 
 # botones de acciones
-agregar_btn = Button(marco, text="Agregar", bd=3, command=lambda:agregar())
-agregar_btn.grid(column=1, row=4, padx=5)
-modificar_btn = Button(marco, text="Actualizar", bd=3, command=lambda:actualizar())
-modificar_btn.grid(column=2, row=4)
-eliminar_btn = Button(marco, text="Eliminar", bd=3, command=lambda:eliminar())
-eliminar_btn.grid(column=3, row=4)
+agregar_btn = tk.Button(marco, text="Agregar", command=lambda:abrir_ventana_agregar(marco, tabla_emp))
+modificar_btn = tk.Button(marco, text="Actualizar", bd=3, command=lambda:abrir_ventana_actualizar(marco, dni, legajo, apellido_nombre, domicilio, tabla_emp))
+modificar_btn.config(state="disabled")
+eliminar_btn = tk.Button(marco, text="Eliminar", bd=3, command=lambda:eliminar_registro(tabla_emp))
+eliminar_btn.config(state="disabled")
 
-cargar_datos()
-ventana.mainloop()
+# Alinear botones a la derecha
+agregar_btn.grid(column=3, row=1, sticky="e")
+modificar_btn.grid(column=4, row=1, sticky="e")
+eliminar_btn.grid(column=5, row=1, sticky="e")
+
+cargar_datos(tabla_emp)
+# Enlazar el evento de clic en la ventana principal para deseleccionar en el TreeView
+ventana.bind("<Button-1>", lambda event: verificar_click_fuera(event, tabla_emp, eliminar_btn, modificar_btn))
+ventana.mainloop() 
