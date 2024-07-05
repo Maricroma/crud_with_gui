@@ -4,7 +4,7 @@ from funciones_crud import cargar_datos, eliminar_registro
 from funciones_interfaz import abrir_ventana_agregar, abrir_ventana_actualizar, seleccionar, verificar_click_fuera
 
 ventana = tk.Tk()
-ventana.title("Plataforma de CRUD")
+ventana.title("Plataforma de Gestión")
 # Se puede centrar directamente usando funciones para obtener el tamaño de la pantalla
 ancho_pantalla = ventana.winfo_screenwidth() # método para obtener el ancho
 alto_pantalla = ventana.winfo_screenheight() # método para obtener el alto
